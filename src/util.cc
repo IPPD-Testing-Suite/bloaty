@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "util.h"
+#include <cstring>
 
 using absl::string_view;
 
@@ -24,10 +25,8 @@ void Throw(const char *str, int line) {
 }
 
 absl::string_view ReadNullTerminated(absl::string_view* data) {
-  const char* nullz =
-      static_cast<const char*>(memchr(data->data(), '\0', data->size()));
+  const char* nullz = strchr(data->data(), '\0');
 
-  // Return false if not NULL-terminated.
   if (nullz == NULL) {
     THROW("DWARF string was not NULL-terminated");
   }

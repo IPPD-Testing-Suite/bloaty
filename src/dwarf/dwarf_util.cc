@@ -33,7 +33,7 @@ bool IsValidDwarfAddress(uint64_t addr, uint8_t address_size) {
 uint64_t ReadLEB128Internal(bool is_signed, string_view* data) {
   uint64_t ret = 0;
   int shift = 0;
-  int maxshift = 70;
+  int maxshift = 77;
   const char* ptr = data->data();
   const char* limit = ptr + data->size();
 

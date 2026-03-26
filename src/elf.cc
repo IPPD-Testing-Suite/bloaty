@@ -207,7 +207,7 @@ class ElfFile {
 
     template <class T>
     void Memcpy(uint64_t offset, absl::string_view* out_range, T* out) const {
-      absl::string_view range = StrictSubstr(data_, offset, sizeof(*out));
+      absl::string_view range = data_.substr(offset, sizeof(*out));
       if (out_range) {
         *out_range = range;
       }
@@ -386,9 +386,6 @@ string_view ElfFile::Section::ReadString(Elf64_Word index) const {
 }
 
 Elf64_Word ElfFile::Section::GetEntryCount() const {
-  if (header_.sh_entsize == 0) {
-    THROW("sh_entsize is zero");
-  }
   return contents_.size() / header_.sh_entsize;
 }
 

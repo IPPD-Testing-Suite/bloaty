@@ -317,9 +317,19 @@ list(APPEND LIBBLOATY_LIBS absl::demangle_internal)
 list(APPEND LIBBLOATY_LIBS Threads::Threads)
 
 if(DEFINED ENV{LIB_FUZZING_ENGINE})
-  message("LIB_FUZZING_ENGINE set, building fuzz_target instead of Bloaty")
-  add_executable(fuzz_target tests/fuzz_target.cc)
-  target_link_libraries(fuzz_target ${LIBBLOATY_LIBS} $ENV{LIB_FUZZING_ENGINE})
+  message("LIB_FUZZING_ENGINE set, building fuzzing harnesses")
+  set(FUZZING_HARNESSES
+    dwarf_leb128_fuzzer
+    elf_symtab_fuzzer
+    dwarf_strtab_fuzzer
+    readfixed_fuzzer
+    elf_section_fuzzer
+  )
+  foreach(harness ${FUZZING_HARNESSES})
+    add_executable(${harness} extras/fuzzing/${harness}.cpp)
+    target_link_libraries(${harness} ${LIBBLOATY_LIBS} $ENV{LIB_FUZZING_ENGINE})
+    set_property(TARGET ${harness} PROPERTY FOLDER "fuzzing")
+  endforeach(harness)
 else()
   add_executable(bloaty src/main.cc)
   target_link_libraries(bloaty ${LIBBLOATY_LIBS})
@@ -381,15 +391,24 @@ else()
         set_property(TARGET ${target} PROPERTY FOLDER "tests")
       endforeach(target)
 
-      add_executable(fuzz_test tests/fuzz_target.cc tests/fuzz_driver.cc)
-      target_link_libraries(fuzz_test ${LIBBLOATY_LIBS})
-      set_property(TARGET fuzz_test PROPERTY FOLDER "tests")
+      set(FUZZING_HARNESSES
+        dwarf_leb128_fuzzer
+        elf_symtab_fuzzer
+        dwarf_strtab_fuzzer
+        readfixed_fuzzer
+        elf_section_fuzzer
+      )
+      foreach(harness ${FUZZING_HARNESSES})
+        add_executable(${harness}
+          extras/fuzzing/${harness}.cpp
+          extras/fuzzing/fuzz_driver.cpp)
+        target_link_libraries(${harness} ${LIBBLOATY_LIBS})
+        set_property(TARGET ${harness} PROPERTY FOLDER "fuzzing")
+      endforeach(harness)
 
       foreach(testlib gmock gmock_main gtest gtest_main)
         set_property(TARGET ${testlib} PROPERTY FOLDER "tests/libs")
       endforeach(testlib)
-
-      file(GLOB fuzz_corpus tests/testdata/fuzz_corpus/*)
 
       add_test(NAME range_map_test COMMAND range_map_test)
       add_test(NAME bloaty_test_x86-64 COMMAND bloaty_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/linux-x86_64)
@@ -397,7 +416,6 @@ else()
       add_test(NAME bloaty_test_pe_x64 COMMAND bloaty_test_pe WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/PE/x64)
       add_test(NAME bloaty_test_pe_x86 COMMAND bloaty_test_pe WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/PE/x86)
       add_test(NAME bloaty_misc_test COMMAND bloaty_misc_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/misc)
-      add_test(NAME fuzz_test COMMAND fuzz_test ${fuzz_corpus} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/fuzz_corpus)
     endif()
   endif()
 
