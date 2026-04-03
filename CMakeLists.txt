@@ -100,6 +100,14 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
+# Inject CXXFLAGS early so all third-party subdirectories (protobuf, re2,
+# capstone, zlib, abseil) are compiled with the same stdlib as the top-level
+# targets.  In OSS-Fuzz / Buttercup builds this carries -stdlib=libc++, and
+# applying it after add_subdirectory() causes an ABI mismatch at link time.
+if(DEFINED ENV{CXXFLAGS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
+endif()
+
 if(UNIX OR MINGW)
   if(BLOATY_ENABLE_RE2)
     if(RE2_FOUND)
@@ -203,10 +211,6 @@ endif()
 if(BLOATY_ENABLE_UBSAN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=undefined")
-endif()
-
-if(DEFINED ENV{CXXFLAGS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 endif()
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
